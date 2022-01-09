@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using static CalcC.TokenType;
 
 namespace CalcC
@@ -38,10 +39,133 @@ namespace CalcC
                 // If you get stuck, think about what the
                 // code would look like in C# and use
                 // sharplab.io to see what the CIL would be.
-                
-                throw new NotImplementedException();
-            }
 
+                if (tokenType == TokenType.Number)
+                {
+                    int num = Int32.Parse(token);
+                    if (num > 9)
+                    {
+                        cil += @"
+    ldloc.0
+    ldc.i4.s " + num + @"
+    callvirt instance void class [System.Collections] System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (num <= 9 && num >= 0)
+                    {
+                        cil += @"
+    ldloc.0
+    ldc.i4." + num + @"
+    callvirt instance void class [System.Collections] System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (num == -1)
+                    {
+                        cil += @"
+    ldloc.0
+    ldc.i4.m1
+    callvirt instance void class [System.Collections] System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (num < 0)
+                    {
+                        cil += @"
+    ldloc.0
+    ldc.i4.s" + num + @"
+    callvirt instance void class [System.Collections] System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                }
+                if (tokenType == TokenType.BinaryOperator)
+                {
+                    if (token == "+")
+                    {
+                        cil += @"
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    add
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (token == "-")
+                    {
+                        cil += @"
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    sub
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (token == "*")
+                    {
+                        cil += @"
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    mul
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (token == "/")
+                    {
+                        cil += @"
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    div
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                    if (token == "%")
+                    {
+                        cil += @"
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    rem
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    nop";
+                    }
+                }
+                if (tokenType == TokenType.UnaryOperator)
+                {
+                    cil += @"
+    //ldloc.0
+    //callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Peek()
+    //ldc.i4.0
+    //clt
+    //stloc.2
+
+    // sequence point: hidden
+    //ldloc.2
+    //brfalse.s IL_002a
+
+    //nop
+    //newobj instance void [System.Private.CoreLib]System.OverflowException::.ctor()
+    //throw
+
+    ldloc.0
+    ldloc.0
+    callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
+    conv.r8
+    call float64 [System.Private.CoreLib]System.Math::Sqrt(float64)
+    conv.i4
+    callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
+    ";
+                }
+            }
             // Emit the postamble.
             cil += Postamble();
 
@@ -55,7 +179,24 @@ namespace CalcC
         // types are given to you in TokenType.cs.
         private static TokenType GetTokenType(string token)
         {
-            throw new NotImplementedException();
+            //number 1234567890
+            if (Regex.IsMatch(token, @"-?[0-9]"))
+            {
+                return TokenType.Number;
+            }
+            //sqrt
+            if (token == "sqrt")
+            {
+                return TokenType.UnaryOperator;
+            }
+            //+-*/%
+            if (Regex.IsMatch(token, @"([\+\-\*\/\%])"))
+            {
+                return TokenType.BinaryOperator;
+            }
+
+            return TokenType.Blank;
+            //throw new NotImplementedException();
         }
 
         // Preamble:
@@ -90,8 +231,7 @@ namespace CalcC
     stloc.0
     // Initialize the Dictionary<>
     newobj instance void class [System.Private.CoreLib]System.Collections.Generic.Dictionary`2<char, int32>::.ctor()
-    stloc.1
-";
+    stloc.1";
         }
 
         // Postamble.  Pop the top of the stack and print whatever is there.
@@ -102,7 +242,7 @@ namespace CalcC
     ldloc.0
     callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
     call void [System.Console]System.Console::WriteLine(int32)
-
+    nop
     ret
 }";
         }
