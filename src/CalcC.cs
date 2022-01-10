@@ -142,28 +142,14 @@ namespace CalcC
                 if (tokenType == TokenType.UnaryOperator)
                 {
                     cil += @"
-    //ldloc.0
-    //callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Peek()
-    //ldc.i4.0
-    //clt
-    //stloc.2
-
-    // sequence point: hidden
-    //ldloc.2
-    //brfalse.s IL_002a
-
-    //nop
-    //newobj instance void [System.Private.CoreLib]System.OverflowException::.ctor()
-    //throw
-
     ldloc.0
     ldloc.0
     callvirt instance !0 class [System.Collections]System.Collections.Generic.Stack`1<int32>::Pop()
     conv.r8
     call float64 [System.Private.CoreLib]System.Math::Sqrt(float64)
-    conv.i4
+    conv.ovf.i4
     callvirt instance void class [System.Collections]System.Collections.Generic.Stack`1<int32>::Push(!0)
-    ";
+    nop";
                 }
             }
             // Emit the postamble.
